@@ -1,0 +1,5 @@
+# Ignorer les dossiers suivantes
+
+.ipynb_checkpoints/
+__pycache__/
+contact_links_classification/Models/model_0/model_contact_40_maxlen_10_epochs/

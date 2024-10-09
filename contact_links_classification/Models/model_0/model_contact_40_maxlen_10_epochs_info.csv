@@ -1,0 +1,13 @@
+﻿training_details
+Époque 1/10 - Train Loss: 0.0140 - Validation Loss: 0.0299 - Validation Accuracy: 0.9920 - Precision: 0.9917 - Recall: 0.9917 - F1 Score: 0.9917
+Époque 2/10 - Train Loss: 0.0117 - Validation Loss: 0.0271 - Validation Accuracy: 0.9930 - Precision: 0.9917 - Recall: 0.9938 - F1 Score: 0.9928
+Époque 3/10 - Train Loss: 0.0080 - Validation Loss: 0.0360 - Validation Accuracy: 0.9920 - Precision: 0.9917 - Recall: 0.9917 - F1 Score: 0.9917
+Époque 4/10 - Train Loss: 0.0083 - Validation Loss: 0.0376 - Validation Accuracy: 0.9930 - Precision: 0.9917 - Recall: 0.9938 - F1 Score: 0.9928
+Époque 5/10 - Train Loss: 0.0078 - Validation Loss: 0.0308 - Validation Accuracy: 0.9930 - Precision: 0.9938 - Recall: 0.9917 - F1 Score: 0.9927
+Époque 6/10 - Train Loss: 0.0074 - Validation Loss: 0.0348 - Validation Accuracy: 0.9940 - Precision: 0.9958 - Recall: 0.9917 - F1 Score: 0.9938
+Époque 7/10 - Train Loss: 0.0069 - Validation Loss: 0.0361 - Validation Accuracy: 0.9950 - Precision: 0.9959 - Recall: 0.9938 - F1 Score: 0.9948
+Époque 8/10 - Train Loss: 0.0070 - Validation Loss: 0.0364 - Validation Accuracy: 0.9950 - Precision: 0.9959 - Recall: 0.9938 - F1 Score: 0.9948
+Époque 9/10 - Train Loss: 0.0068 - Validation Loss: 0.0367 - Validation Accuracy: 0.9960 - Precision: 0.9959 - Recall: 0.9959 - F1 Score: 0.9959
+Époque 10/10 - Train Loss: 0.0065 - Validation Loss: 0.0368 - Validation Accuracy: 0.9940 - Precision: 0.9958 - Recall: 0.9917 - F1 Score: 0.9938
+Fine-tuning terminé! Temps total: 760.03 secondes | 12.67 min | 0.21 hours
+Modèle enregistré à /content/drive/MyDrive/work/Hajy8_Contact_links_classification/contact_links_classification/Models/model_0/model_contact_40_maxlen_10_epochs
