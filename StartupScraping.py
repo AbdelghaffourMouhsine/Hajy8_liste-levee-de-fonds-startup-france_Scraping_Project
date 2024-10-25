@@ -3,8 +3,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.common.keys import Keys
 import time , random
-import os
+import os, re, json, copy
 import zipfile
 from bs4 import BeautifulSoup
 
@@ -15,10 +16,11 @@ from Startup import Startup
 class StartupScraping:
     
     def __init__(self, url=None, proxy=None, with_selenium_grid=True, file_path=None, startup=None, contact_link_classifier=None, contactOpenAIScraping=None, 
-                 pageProcessing=None, sentenceProcessing= None):
+                 pageProcessing=None, sentenceProcessing= None, foundersOpenAIClassification=None, filterFoundersOneByOneOpenAI=None):
         self.url = url
         self.file_path = file_path
         self.startup = startup
+        self.item = startup
         self.proxy = proxy
         if self.proxy :
             self.PROXY_HOST = proxy["PROXY_HOST"] # rotating proxy or host
@@ -43,6 +45,8 @@ class StartupScraping:
         self.contactOpenAIScraping = contactOpenAIScraping
         self.pageProcessing = pageProcessing
         self.sentenceProcessing = sentenceProcessing
+        self.foundersOpenAIClassification = foundersOpenAIClassification
+        self.filterFoundersOneByOneOpenAI = filterFoundersOneByOneOpenAI
         # self.start_scraping()
         
 
@@ -471,3 +475,311 @@ class StartupScraping:
         results = self.contactOpenAIScraping.predict(new_clean_text)
         # print(results)
         return results
+
+    ########################################################################################################
+    def get_linkedin_authentication(self):
+        email = 'abdelghaffourmh@gmail.com'
+        pwd = 'abdo12345'
+        email = 'abdelghaffourm@gmail.com'
+        pwd = 'abdo@#%&)Mouhsine//2001*10'
+        email = 'hs45@gmx.fr'
+        pwd = 'LZidaneNE1010!N'
+        
+        url = 'https://www.linkedin.com/login/fr?fromSignIn=true&trk=guest_homepage-basic_nav-header-signin'
+        self.driver.get(url)
+
+        self.driver.maximize_window()
+        time.sleep(2)
+        
+        input_username = self.get_element('//*[@id="username"]')
+        if input_username["status"]:
+            input_username = input_username["data"]
+            input_username.send_keys(email)
+            input_username.send_keys(Keys.ENTER)
+        else:
+            print({"status": False, "data":input_username["data"] })
+        time.sleep(2)
+
+        input_password = self.get_element('//*[@id="password"]')
+        if input_password["status"]:
+            input_password = input_password["data"]
+            input_password.send_keys(pwd)
+            input_password.send_keys(Keys.ENTER)
+        else:
+            print({"status": False, "data":input_password["data"] })
+        time.sleep(20)
+        
+    def get_LinkedIn_profiles_of_company_founders(self, item):
+        self.item = item
+        time.sleep(random.uniform(1,1.5))
+        try:
+            if str(self.item.startup_linkedin_url).strip() != "nan" and self.item.startup_linkedin_url.strip() != "" and self.item.startup_linkedin_url != None and self.item.startup_linkedin_url != 'none' and self.item.startup_linkedin_url != 'None' and self.item.startup_linkedin_url != 'null' and  'company' in self.item.startup_linkedin_url:
+                # print(self.item.startup_linkedin_url, type(self.item.startup_linkedin_url))
+        
+            
+                self.driver.get(self.item.startup_linkedin_url)
+                time.sleep(random.uniform(2,3.5))
+    
+                a_personnes_link = None
+                a_personnes_button = self.get_element('/html/body/div[6]/div[3]/div/div[2]/div/div[2]/main/div[1]/section/div/div[2]/div[3]/nav/ul/li[5]/a')
+                if a_personnes_button["status"]:
+                    a_personnes_button = a_personnes_button["data"]
+                    a_personnes_link = a_personnes_button.get_attribute('href')
+    
+                if type(a_personnes_button) == dict or a_personnes_button.text.strip() != 'Personnes':
+                    # print('at else ...')
+                    time.sleep(random.uniform(1,2.5))
+                    a_personnes_button = self.get_element('//li/a', group=True)
+                    if a_personnes_button["status"]:
+                        a_personnes_button = a_personnes_button["data"]
+                        for a in a_personnes_button:
+                            if a.text.strip() == 'Personnes':
+                                a_personnes_link = a.get_attribute('href')
+                                break
+                    else:
+                        print({"status": False, "data": a_personnes_button["data"] })
+                    
+    
+                if a_personnes_link:
+                    self.driver.get(a_personnes_link)
+                    time.sleep(random.uniform(2,4.5))
+                    
+                    last_height = self.driver.execute_script("return document.body.scrollHeight")
+                    second = False
+                    while True:
+                        # Scroll down to bottom
+                        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                        # Wait to load page
+                        time.sleep(random.uniform(2.5, 4))
+                        # Calculate new scroll height and compare with total scroll height
+                        new_height = self.driver.execute_script("return document.body.scrollHeight")
+                        
+                        if new_height == last_height:
+                            
+                            temp = False
+                            if not temp:
+                                buttons = self.get_element('//button', group=True)
+                                if buttons["status"]:
+                                    buttons = buttons["data"]
+                                    if len(buttons)>0:
+                                        for button in buttons:
+                                            if button.text.lower() == 'afficher plus de résultats':
+                                                button.click()
+                                                print("yeeeees : if button.text.lower() == 'afficher plus de résultats':")
+                                                temp = True
+                                                break
+                    
+                            if second and not temp:
+                                break
+                            else:
+                                second = True
+                                time.sleep(random.uniform(1.5,2.5))
+                                
+                        last_height = new_height
+                        
+                personnes_li_s = self.get_element('//div[@class="artdeco-card org-people-profile-card__card-spacing org-people__card-margin-bottom"]/div/div/ul/li', group=True)
+                if personnes_li_s["status"]:
+                    personnes_li_s = personnes_li_s["data"]
+                    # print(f'le nombre de personnes avant extract est: {len(personnes_li_s)}')
+                    profiles = []
+                    for li in personnes_li_s:
+                        profile = self.get_personne_profile_from_li(li)
+                        if profile["status"]:
+                            # print(profile["data"])
+                            profiles.append(profile["data"])
+                    # print(f'le nombre de personnes apres extract est : {len(profiles)}')
+                else:
+                    print({"status": False, "data": personnes_li_s["data"] })
+    
+                self.item.profiles = profiles
+                print(f'{self.item.startup_name} : {len(self.item.profiles)}')
+                return {"status": True, "data": self.item }
+                            
+            else:
+                return {"status": True, "data": self.item }
+                
+        except Exception as e:
+            print(f'ERRRRRRRRRRRRRRRRRRRRRRRROR: ({self.item.startup_linkedin_url},{type(self.item.startup_linkedin_url)}) {e}')
+            ExceptionStorage(self.item, str(e))
+            return {"status": False, "data": self.item }
+            
+    def get_personne_profile_from_li(self, personne_li):
+        personne_dic = {}
+        a_profile_url = self.get_element('div/section/div/div/div[2]/div[1]/a[@class="app-aware-link  link-without-visited-state"]', from_elem=personne_li)
+        if a_profile_url["status"]:
+            a_profile_url = a_profile_url["data"]
+            personne_dic['profile_url'] = a_profile_url.get_attribute('href')
+            personne_dic['person_name'] = a_profile_url.get_attribute("innerText")
+        else:
+            return {"status": False, "data": a_profile_url["data"] }
+
+        div_profile_description = self.get_element('div/section/div/div/div[2]/div[@class="artdeco-entity-lockup__subtitle ember-view"]', from_elem=personne_li)
+        if div_profile_description["status"]:
+            div_profile_description = div_profile_description["data"]
+            personne_dic['profile_description'] = div_profile_description.get_attribute("innerText")
+            
+        else:
+            print({"status": False, "data": div_profile_description["data"] })
+            
+        return {"status": True, "data": personne_dic }
+
+    ########################################################################################################
+    def get_Founder_Profiles_using_OpenAi(self, item):        
+        self.item = item
+
+        def clean_invalid_escapes(json_string):
+            # Supprime les séquences d'échappement invalides
+            cleaned_string = re.sub(r'\\U[0-9a-fA-F]{8}', '', json_string)
+            cleaned_string = re.sub(r'\\x[0-9a-fA-F]{2}', '', cleaned_string)
+            return cleaned_string
+            
+        try:
+            if self.item.startup_name.strip() : # == "Groupe SYD" :
+                # with self.lock_print:
+                print(f"{self.item.Rang} {'@'*50}  {self.item.startup_name}  {'@'*50}")
+                    
+                if str(self.item.profiles).strip() != "nan" and self.item.profiles != None and self.item.profiles.lower() != 'none' and self.item.profiles != 'null' and item.profiles.strip() != '[]' and self.item.profiles.strip() != "":
+                    
+                    profiles = []
+                    for i, profile in enumerate('}&&||&&'.join(item.profiles[1:-1].split('},')).split('&&||&&')):
+                        profile = profile.replace('"', "'")
+                        
+                        profile = profile.replace("{'", '{"')
+                        
+                        profile = profile.replace("', '", '", "')
+                        profile = profile.replace("\", '", '", "')
+                        profile = profile.replace("', \"", '", "')
+                        
+                        profile = profile.replace("': '", '": "')
+                        profile = profile.replace("': \"", '": "')
+                        profile = profile.replace("\": '", '": "')
+                        
+                        profile = profile.replace("'}", '"}')
+    
+                        profile = profile.replace("'", "\'")
+                        profile = profile.replace("\\'", "\'")
+                        
+                        profile = clean_invalid_escapes(profile)
+                        
+                        # print(f'{i} : {profile}')
+                        
+                        profile = json.loads(profile)
+                        # print(f'{i} : {profile["profile_description"]}')
+                        # print(f'*'*150)
+
+                        profiles.append(profile)
+                    
+                    items = self.get_valid_items_from_profiles(profiles)
+                        
+                    # print(f'='*150)
+                    # for i in items:
+                    #     print(f'{i.founder_name} : {i.founder_description}')
+                        
+                else:
+                    return {"status": False, "data": self.item }
+
+            if items:
+                return {"status": True, "data": items }
+            else:
+                return {"status": True, "data": self.item }
+                
+        except Exception as e:
+            print(f"Errooooor at {self.item.startup_name}")
+            print(e.args[0])
+            ExceptionStorage(self.item, str(e))
+            return {"status": False, "data": self.item }
+
+
+    def is_founder_director(self, description):
+        keywords = [
+            "general director", "directeur général", "directrice générale",
+            " CEO", " PDG", " CFO", "CEO ", "PDG ", "CFO ",
+            "president", "président", "présidente",
+            "founder", "fondateur", "fondatrice",
+            "co-founder", "Co-fondatrice", "Co-fondateur",
+            " CTO", "CTO ",
+            "Chief",
+            "HR director", "DRH", "directeur RH", "directrice RH",
+            "partner", "associé", "associée",
+            "owner",
+            "Investor", "investeur", "Entrepreneur"
+        ]
+    
+        # Exclude "product owner" explicitly
+        if "product owner" in str(description).lower():
+            return {"response": False}
+    
+        # Check if any keyword is in the description
+        for keyword in keywords:
+            if keyword.lower() in str(description).lower():
+                return {"response": True}
+        
+        return {"response": False}
+
+    def get_valid_items_from_profiles(self, profiles):
+        profiles_for_openAI = []
+        valid_profiles = []
+        
+        for profile in profiles:
+            result=self.is_founder_director(profile["profile_description"])
+            if result['response']:
+                print(f'+++ valid profil : {profile["profile_description"]}')
+                valid_profiles.append(profile)
+            else:
+                profiles_for_openAI.append(profile)
+    
+        profiles = profiles_for_openAI
+        step = 50
+        founder_profiles = []
+        for i in range(0,len(profiles),step):
+            chunk = [ f'{profile["person_name"]}, {profile["profile_description"]}' for profile in profiles[i:i+step]]
+    
+            result = self.foundersOpenAIClassification.predict(chunk)
+            # display(chunk)
+            # print(f'*'*150)
+            
+            # print('Founder profiles:')
+            
+            for name, value in result['content'].items():
+                try:
+                    if value:
+                        profile = [profile for profile in profiles if profile['person_name'].strip() == name.strip()][0]
+                        founder_profiles.append(profile)
+                        print(f'--- valid profil : {profile["profile_description"]}')
+                        # display(profile)
+                        # print(f'*'*150)
+                except Exception as e:
+                    print(f'===> error at founder name : {name}')
+                    ExceptionStorage(self.item, f'===> error at founder name : {name}')
+            #print(f'$'*150)
+    
+        final_valid_profiles = valid_profiles + founder_profiles
+        items = []
+        for profile in final_valid_profiles:
+            item_copy = copy.deepcopy(self.item)
+            item_copy.founder_name = profile['person_name']
+            item_copy.founder_description = profile['profile_description']
+            item_copy.founder_profile_url = profile['profile_url']
+            items.append(item_copy)
+            
+        return items
+        
+    def filter_Founder_Profiles_using_OpenAi(self, item):        
+        self.item = item
+
+        result = self.is_founder_director(self.item.founder_description)
+        if result["response"]:
+            self.item.valid_profile_description = True
+            print(f'+'*150)
+            print(f'{self.item.founder_description} : {result["response"]}')
+            print(f'+'*150)
+        else:
+            result = self.filterFoundersOneByOneOpenAI.predict(self.item.founder_description)
+            print(f'-'*150)
+            print(f'{self.item.founder_description} : {result['content']}')
+            print(f'-'*150)
+            self.item.valid_profile_description = result['content']['response']
+        
+        return {"status": True, "data": self.item }
+        
+    ########################################################################################################
