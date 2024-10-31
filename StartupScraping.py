@@ -41,6 +41,8 @@ class StartupScraping:
         else:
             self.driver = webdriver.Chrome(options=self.options)
 
+        self.driver.maximize_window()
+        
         self.contact_link_classifier = contact_link_classifier
         self.contactOpenAIScraping = contactOpenAIScraping
         self.pageProcessing = pageProcessing
@@ -487,8 +489,6 @@ class StartupScraping:
         
         url = 'https://www.linkedin.com/login/fr?fromSignIn=true&trk=guest_homepage-basic_nav-header-signin'
         self.driver.get(url)
-
-        self.driver.maximize_window()
         time.sleep(2)
         
         input_username = self.get_element('//*[@id="username"]')
@@ -513,7 +513,7 @@ class StartupScraping:
         self.item = item
         time.sleep(random.uniform(1,1.5))
         try:
-            if str(self.item.startup_linkedin_url).strip() != "nan" and self.item.startup_linkedin_url.strip() != "" and self.item.startup_linkedin_url != None and self.item.startup_linkedin_url != 'none' and self.item.startup_linkedin_url != 'None' and self.item.startup_linkedin_url != 'null' and  'company' in self.item.startup_linkedin_url:
+            if str(self.item.startup_linkedin_url).strip() != "nan" and self.item.startup_linkedin_url.strip() != "" and self.item.startup_linkedin_url != None and self.item.startup_linkedin_url != 'none' and self.item.startup_linkedin_url != 'None' and self.item.startup_linkedin_url != 'null' and  'company' in self.item.startup_linkedin_url and (str(self.item.profiles) == 'nan' or str(self.item.profiles).strip() == '[]' or self.item.profiles == None or str(self.item.profiles).lower() == 'none'):
                 # print(self.item.startup_linkedin_url, type(self.item.startup_linkedin_url))
         
             
@@ -538,8 +538,14 @@ class StartupScraping:
                                 break
                     else:
                         print({"status": False, "data": a_personnes_button["data"] })
-                    
-    
+
+                if not a_personnes_link:
+                    a_Plus_buttons = self.get_element('//button[@aria-expanded="false"]', group=True)
+                    if a_Plus_buttons["status"]:
+                        a_Plus_buttons = a_Plus_buttons["data"]
+                        for button in a_Plus_buttons:
+                             == 'Plus':
+                                
                 if a_personnes_link:
                     self.driver.get(a_personnes_link)
                     time.sleep(random.uniform(2,4.5))
@@ -572,16 +578,17 @@ class StartupScraping:
                             if second and not temp:
                                 break
                             else:
-                                second = True
+                                if not temp:
+                                    second = True
                                 time.sleep(random.uniform(1.5,2.5))
                                 
                         last_height = new_height
-                        
+                    
                 personnes_li_s = self.get_element('//div[@class="artdeco-card org-people-profile-card__card-spacing org-people__card-margin-bottom"]/div/div/ul/li', group=True)
+                profiles = []
                 if personnes_li_s["status"]:
                     personnes_li_s = personnes_li_s["data"]
                     # print(f'le nombre de personnes avant extract est: {len(personnes_li_s)}')
-                    profiles = []
                     for li in personnes_li_s:
                         profile = self.get_personne_profile_from_li(li)
                         if profile["status"]:
@@ -699,11 +706,13 @@ class StartupScraping:
             "co-founder", "Co-fondatrice", "Co-fondateur",
             " CTO", "CTO ",
             "Chief",
-            "HR director", "DRH", "directeur RH", "directrice RH",
+            "HR director", "DRH", "directeur RH", "directrice RH", "DHR",
             "partner", "associé", "associée",
             "owner",
             "Investor", "investeur", "Entrepreneur"
         ]
+
+        keywords_1 = ["CEO", "PDG", "CFO","CTO"]
     
         # Exclude "product owner" explicitly
         if "product owner" in str(description).lower():
@@ -713,7 +722,12 @@ class StartupScraping:
         for keyword in keywords:
             if keyword.lower() in str(description).lower():
                 return {"response": True}
-        
+                
+        # Check if any keyword is in the description
+        for keyword in keywords_1:
+            if keyword in str(description):
+                return {"response": True}
+                
         return {"response": False}
 
     def get_valid_items_from_profiles(self, profiles):
@@ -766,7 +780,10 @@ class StartupScraping:
         
     def filter_Founder_Profiles_using_OpenAi(self, item):        
         self.item = item
-
+        
+        if str(self.item.valid_profile_description).lower() == 'false' or str(self.item.valid_profile_description).lower() == 'true':
+            return {"status": True, "data": self.item }
+        
         result = self.is_founder_director(self.item.founder_description)
         if result["response"]:
             self.item.valid_profile_description = True
@@ -782,4 +799,89 @@ class StartupScraping:
         
         return {"status": True, "data": self.item }
         
+    ########################################################################################################
+
+    def get_company_linkedin_url_from_startup_web_site(self,i):
+        try:
+            if self.startup.startup_valid_web_site_url and str(self.startup.profiles) == 'nan':
+                print(f'{i} ************ {self.startup.startup_name} ******************************************')
+                self.driver.get(self.url)
+                time.sleep(0.5)
+                
+                html_content = self.driver.page_source
+                # Analyser le contenu HTML
+                soup = BeautifulSoup(html_content, 'html.parser')
+                
+                # Rechercher les liens LinkedIn dans les balises <a>
+                linkedin_links = []
+                for a_tag in soup.find_all('a', href=True):
+                    href = a_tag['href']
+                    # Vérifier si l'URL contient 'linkedin.com'
+                    if 'linkedin.com' in href and 'company' in href:
+                        linkedin_links.append(href)
+                
+                # Afficher les liens LinkedIn extraits
+                print(linkedin_links)
+                if linkedin_links:
+                    self.startup.startup_linkedin_url = linkedin_links[0]
+                else:
+                    if 'linkedin.com' not in str(self.startup.startup_linkedin_url) or 'company' not in str(self.startup.startup_linkedin_url):
+                        self.startup.startup_linkedin_url = None
+
+                print(self.startup.startup_linkedin_url)
+                return {"status": True, "data": self.startup }
+            else:
+                return {"status": True, "data": self.startup }
+        except Exception as e:
+            print(f'ERRRRRRRRRRRRRRRRRRRRRRRROR: {e}')
+            ExceptionStorage(self.startup, str(e))
+            return {"status": True, "data": self.startup }
+        finally:
+            self.driver.quit()
+            
+    ############################################################################################################
+    def get_google_page(self):
+        self.driver.get('https://www.google.com')
+        time.sleep(random.uniform(0.5, 2))
+        
+        input_search = self.get_element('//*[@id="APjFqb"]')
+        if input_search["status"]:
+            input_search = input_search["data"]
+            input_search.send_keys('some keys for get results')
+            input_search.send_keys(Keys.ENTER)
+        else:
+            print({"status": False, "data":input_search["data"] })
+        time.sleep(3)
+        
+    def get_linkedin_url_from_company_name(self, item):
+        self.item = item
+        try:
+            input_search = self.get_element('//*[@id="APjFqb"]')
+            if input_search["status"]:
+                input_search = input_search["data"]
+                # Effacer le champ de saisie avant d'ajouter une nouvelle valeur
+                input_search.clear()  # Supprime le contenu existant de l'input
+                keywords = str(self.item.Nom_de_l_entreprise).strip() + ' linkedin'
+                input_search.send_keys(keywords)  # Ajouter la nouvelle valeur
+                time.sleep(random.uniform(0.5, 2))
+                input_search.send_keys(Keys.ENTER)  # Envoyer le formulaire ou valider la recherch
+            else:
+                print({"status": False, "data":input_search["data"] })
+            time.sleep(random.uniform(1,1.5))
+            
+            a_linkedin = self.get_element('//a[@jsname="UWckNb"]')
+            if a_linkedin["status"]:
+                a_linkedin = a_linkedin["data"]
+                self.item.linkedin = a_linkedin.get_attribute('href')
+            else:
+                print({"status": False, "data": a_linkedin["data"] })
+                
+            print(f'{self.item.Nom_de_l_entreprise} : {self.item.linkedin}')
+            return {"status": True, "data": self.item }
+            
+        except Exception as e:
+            print(f'ERRRRRRRRRRRRRRRRRRRRRRRROR: {e}')
+            ExceptionStorage(self.item, str(e))
+            return {"status": False, "data": self.item }
+
     ########################################################################################################

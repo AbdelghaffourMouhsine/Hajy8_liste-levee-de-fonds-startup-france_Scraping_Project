@@ -22,6 +22,7 @@ class Startup:
         self.founder_name = None
         self.founder_description = None
         self.founder_profile_url = None
+        self.valid_profile_description = None
         
     def init_from_dic(self, dic):
         self.Rang = dic.get('Rang')
@@ -46,6 +47,7 @@ class Startup:
         self.founder_name = dic.get('founder_name')
         self.founder_description = dic.get('founder_description')
         self.founder_profile_url = dic.get('founder_profile_url')
+        self.valid_profile_description = dic.get('valid_profile_description')
         
     def __str__(self):
         return f'Rang = {self.Rang}\nstartup_name = {self.startup_name}\nstartup_amount_invested = {self.startup_amount_invested}\nstartup_article_publication_date = {self.startup_article_publication_date}\nstartup_more_inf_url = {self.startup_more_inf_url}\nstartup_levée_de_fonds = {self.startup_levée_de_fonds}\nstartup_founders = {self.startup_founders}\nstartup_Number_of_employees = {self.startup_Number_of_employees}\nstartup_web_site_url = {self.startup_web_site_url}\nstartup_right_web_site_url = {self.startup_right_web_site_url}\nstartup_valid_web_site_url = {self.startup_valid_web_site_url}\nstartup_facebook_url = {self.startup_facebook_url}\nstartup_instagram_url = {self.startup_instagram_url}\nstartup_linkedin_url = {self.startup_linkedin_url}\nstartup_phone = {self.startup_phone}\nstartup_email = {self.startup_email}\nstartup_address = {self.startup_address}\nstartup_phrasechoc = {self.startup_phrasechoc}\nprofiles = {self.profiles}\nfounder_name = {self.founder_name}\nfounder_description = {self.founder_description}\nfounder_profile_url = {self.founder_profile_url}'
