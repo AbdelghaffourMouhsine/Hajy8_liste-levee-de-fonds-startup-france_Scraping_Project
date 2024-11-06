@@ -513,7 +513,7 @@ class StartupScraping:
         self.item = item
         time.sleep(random.uniform(1,1.5))
         try:
-            if str(self.item.startup_linkedin_url).strip() != "nan" and self.item.startup_linkedin_url.strip() != "" and self.item.startup_linkedin_url != None and self.item.startup_linkedin_url != 'none' and self.item.startup_linkedin_url != 'None' and self.item.startup_linkedin_url != 'null' and  'company' in self.item.startup_linkedin_url and (str(self.item.profiles) == 'nan' or str(self.item.profiles).strip() == '[]' or self.item.profiles == None or str(self.item.profiles).lower() == 'none'):
+            if 'company' in str(self.item.startup_linkedin_url) and (str(self.item.profiles) == 'nan' or str(self.item.profiles).strip() == '[]' or str(self.item.profiles).lower() == 'none'):
                 # print(self.item.startup_linkedin_url, type(self.item.startup_linkedin_url))
         
             
@@ -524,7 +524,8 @@ class StartupScraping:
                 a_personnes_button = self.get_element('/html/body/div[6]/div[3]/div/div[2]/div/div[2]/main/div[1]/section/div/div[2]/div[3]/nav/ul/li[5]/a')
                 if a_personnes_button["status"]:
                     a_personnes_button = a_personnes_button["data"]
-                    a_personnes_link = a_personnes_button.get_attribute('href')
+                    if a_personnes_button.text.strip() != 'Personnes':
+                        a_personnes_link = a_personnes_button.get_attribute('href')
     
                 if type(a_personnes_button) == dict or a_personnes_button.text.strip() != 'Personnes':
                     # print('at else ...')
@@ -539,12 +540,28 @@ class StartupScraping:
                     else:
                         print({"status": False, "data": a_personnes_button["data"] })
 
-                if not a_personnes_link:
-                    a_Plus_buttons = self.get_element('//button[@aria-expanded="false"]', group=True)
-                    if a_Plus_buttons["status"]:
-                        a_Plus_buttons = a_Plus_buttons["data"]
-                        for button in a_Plus_buttons:
-                             == 'Plus':
+                #print(f'a_personnes_link : {a_personnes_link}')
+                if not a_personnes_link :
+                    #print(f'yeees if not a_personnes_link :')
+                    Plus_buttons = self.get_element('//button', group=True)
+                    if Plus_buttons["status"] and len(Plus_buttons["data"])>0 :
+                        Plus_buttons = Plus_buttons["data"]
+                        for button in Plus_buttons:
+                            if str(button.get_attribute("innerText")).strip().lower() == 'plus':
+                                #print("yeees button.get_attribute(\"innerText\") == 'Plus':")
+                                self.click_elem(button)
+                                time.sleep(random.uniform(1,2.5))
+                                a_personnes_button = self.get_element('//a', group=True)
+                                if a_personnes_button["status"]:
+                                    a_personnes_button = a_personnes_button["data"]
+                                    for a in a_personnes_button:
+                                        if a.text.strip() == 'Personnes':
+                                            a_personnes_link = a.get_attribute('href')
+                                            break
+                                break
+                        #print('no Plus button fonded !!!!!!!!!!!!!!!!!!!111')
+                    else:
+                        print(f'Plus_buttons : {Plus_buttons["data"]}')
                                 
                 if a_personnes_link:
                     self.driver.get(a_personnes_link)
@@ -570,7 +587,7 @@ class StartupScraping:
                                     if len(buttons)>0:
                                         for button in buttons:
                                             if button.text.lower() == 'afficher plus de résultats':
-                                                button.click()
+                                                self.click_elem(button)
                                                 print("yeeeees : if button.text.lower() == 'afficher plus de résultats':")
                                                 temp = True
                                                 break
@@ -861,7 +878,7 @@ class StartupScraping:
                 input_search = input_search["data"]
                 # Effacer le champ de saisie avant d'ajouter une nouvelle valeur
                 input_search.clear()  # Supprime le contenu existant de l'input
-                keywords = str(self.item.Nom_de_l_entreprise).strip() + ' linkedin'
+                keywords = str(self.item.startup_name).strip() + ' linkedin'
                 input_search.send_keys(keywords)  # Ajouter la nouvelle valeur
                 time.sleep(random.uniform(0.5, 2))
                 input_search.send_keys(Keys.ENTER)  # Envoyer le formulaire ou valider la recherch
@@ -872,11 +889,11 @@ class StartupScraping:
             a_linkedin = self.get_element('//a[@jsname="UWckNb"]')
             if a_linkedin["status"]:
                 a_linkedin = a_linkedin["data"]
-                self.item.linkedin = a_linkedin.get_attribute('href')
+                self.item.startup_linkedin_url = a_linkedin.get_attribute('href')
             else:
                 print({"status": False, "data": a_linkedin["data"] })
                 
-            print(f'{self.item.Nom_de_l_entreprise} : {self.item.linkedin}')
+            print(f'{self.item.startup_name} : {self.item.startup_linkedin_url}')
             return {"status": True, "data": self.item }
             
         except Exception as e:
